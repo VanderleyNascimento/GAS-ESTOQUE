@@ -154,7 +154,7 @@ const Components = {
                     const user = window.getCurrentUser ? window.getCurrentUser() : null;
                     const isAdmin = user && user.cargo === 'Administrador';
                     return isAdmin ? `
-                            <button onclick="confirmDelete('${item.material}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Excluir">
+                            <button data-action="delete" data-material="${item.material}" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Excluir">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                             ` : '';
@@ -164,7 +164,17 @@ const Components = {
                 </tr>
             `;
         }).join('');
+
+
+        // Event delegation para performance
+        tbody.querySelectorAll('[data-action="delete"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                confirmDelete(btn.dataset.material);
+            });
+        });
     },
+
 };
 
 // Global helper functions

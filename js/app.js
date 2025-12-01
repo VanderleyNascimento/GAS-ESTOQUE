@@ -319,3 +319,103 @@ if (searchMaterials) {
         Components.renderMaterialsTable(filtered);
     });
 }
+
+// Function to open scanner specifically for inventory
+function openInventoryScanner() {
+    Scanner.start();
+    document.getElementById('modal-scanner').classList.remove('hidden');
+}
+
+window.openInventoryScanner = openInventoryScanner;
+
+// ===== AUTOCOMPLETE INVENTÁRIO =====
+const invSearch = document.getElementById('inventory-search');
+const invSuggestions = document.getElementById('inventory-suggestions');
+
+if (invSearch && invSuggestions) {
+    invSearch.addEventListener('input', (e) => {
+        const term = e.target.value.trim().toLowerCase();
+
+        if (!term || term.length < 1) {
+            invSuggestions.classList.add('hidden');
+            invSuggestions.innerHTML = '';
+            return;
+        }
+
+        // Filtrar por ID ou Nome
+        const items = window.stockData.filter(item =>
+            item.id.toString().includes(term) ||
+            item.material.toLowerCase().includes(term)
+        ).slice(0, 8);
+
+        if (items.length === 0) {
+            invSuggestions.classList.add('hidden');
+            return;
+        }
+
+        // Renderizar
+        invSuggestions.innerHTML = items.map(item => `
+            <div class="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b last:border-b-0" data-id="${item.id}">
+                <div class="font-semibold text-slate-900">${item.material}</div>
+                <div class="text-xs text-slate-500">ID: ${item.id} • Estoque: ${item.estoqueAtual}</div>
+            </div>
+        `).join('');
+
+        invSuggestions.classList.remove('hidden');
+
+        // Click nas sugestões
+        invSuggestions.querySelectorAll('[data-id]').forEach(el => {
+            el.addEventListener('click', () => {
+                const item = window.stockData.find(i => i.id === parseInt(el.dataset.id));
+                if (item && Inventory) {
+                    Inventory.addItem(item);
+                    invSearch.value = '';
+                    invSuggestions.classList.add('hidden');
+                }
+            });
+        });
+    });
+
+    // Fechar ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!invSearch.contains(e.target) && !invSuggestions.contains(e.target)) {
+            invSuggestions.classList.add('hidden');
+        }
+    });
+
+    // Enter para selecionar primeiro
+    invSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const first = invSuggestions.querySelector('[data-id]');
+            if (first) first.click();
+            else Inventory.startCount();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const fabToggle = document.getElementById('fab-toggle');
+        const fabMenu = document.getElementById('fab-menu');
+        const fabItems = document.querySelectorAll('.fab-item');
+
+        if (fabToggle && fabMenu) {
+            let isOpen = false;
+
+            fabToggle.addEventListener('click', () => {
+                isOpen = !isOpen;
+
+                if (isOpen) {
+                    // Abrir: ícone roda 45° e botões aparecem
+                    fabToggle.style.transform = 'rotate(45deg)';
+                    fabItems.forEach(item => item.classList.add('show'));
+                } else {
+                    // Fechar: ícone volta e botões desaparecem
+                    fabToggle.style.transform = 'rotate(0deg)';
+                    fabItems.forEach(item => item.classList.remove('show'));
+                }
+            });
+        }
+    }, 200);
+});

@@ -59,6 +59,33 @@ body {
     animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+
+
+/* Animação suave dos botões FAB */
+.fab-item {
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: scale(0);
+    transform-origin: center;
+}
+
+.fab-item.show {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+}
+
+/* Delay escalonado para botões (de cima para baixo) */
+.fab-item:nth-child(3).show {
+    transition-delay: 0.15s;
+}
+
+.fab-item:nth-child(2).show {
+    transition-delay: 0.1s;
+}
+
+.fab-item:nth-child(1).show {
+    transition-delay: 0.05s;
+}
+
 /* Custom Focus Ring */
 input:focus,
 button:focus,

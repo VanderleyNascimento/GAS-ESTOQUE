@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Sistema de Gestão de Estoque - Loggi Stock">
-    <title>LoggiStock - Gestão de Estoque</title>
+    <title>Loggi Stock - Gestão de Estoque</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -38,7 +38,7 @@
                     <i class="fa-solid fa-boxes-stacked text-white text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold text-slate-900">LoggiStock</h1>
+                    <h1 class="text-lg font-bold text-slate-900">Loggi Stock</h1>
                     <p class="text-xs text-slate-500">Gestão de Estoque</p>
                 </div>
             </div>
@@ -273,13 +273,13 @@
 
             <!-- Scanner/Busca -->
             <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
-                <div class="flex gap-3">
+                <div class="relative flex-1">
                     <input type="text" id="inventory-search" placeholder="Digite o ID ou nome do item..."
-                        class="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                    <button onclick="Inventory.startCount()"
-                        class="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors">
-                        <i class="fa-solid fa-plus mr-2"></i>Adicionar
-                    </button>
+                        autocomplete="off"
+                        class="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <div id="inventory-suggestions"
+                        class="hidden absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    </div>
                 </div>
             </div>
 
@@ -316,22 +316,28 @@
             </div>
         </div>
     </main>
-    <!-- FAB Buttons -->
-    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-30">
-        <button id="btn-scanner"
-            class="w-14 h-14 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 active:scale-95 transition-all"
-            title="Scanner QR">
-            <i class="fa-solid fa-qrcode text-xl"></i>
-        </button>
-        <button onclick="openItemModal()"
-            class="w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all"
-            title="Novo Item">
-            <i class="fa-solid fa-plus text-xl"></i>
-        </button>
-        <button onclick="Components.openReportModal()"
-            class="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 active:scale-95 transition-all"
-            title="Gerar Relatório">
-            <i class="fa-solid fa-file-invoice text-xl"></i>
+    <!-- FAB Buttons - Animated -->
+    <div class="fixed bottom-6 right-6 flex flex-col items-end gap-3 z-30">
+        <!-- Botões secundários -->
+        <div id="fab-menu" class="flex flex-col-reverse gap-3">
+            <button onclick="Components.openReportModal()"
+                class="fab-item w-12 h-12 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-all opacity-0">
+                <i class="fa-solid fa-file-invoice text-lg"></i>
+            </button>
+            <button onclick="openItemModal()"
+                class="fab-item w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all opacity-0">
+                <i class="fa-solid fa-plus text-lg"></i>
+            </button>
+            <button id="btn-scanner"
+                class="fab-item w-12 h-12 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition-all opacity-0">
+                <i class="fa-solid fa-qrcode text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Botão principal -->
+        <button id="fab-toggle"
+            class="w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300">
+            <i class="fa-solid fa-plus text-2xl transition-transform duration-300"></i>
         </button>
     </div>
     <!-- Modal: Item (Create/Edit) -->

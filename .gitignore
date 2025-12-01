@@ -11,6 +11,9 @@
 .env
 .env.local
 
+# API Keys (CRITICAL - DO NOT COMMIT!)
+js/config.js
+
 # IDE
 .vscode/
 .idea/
