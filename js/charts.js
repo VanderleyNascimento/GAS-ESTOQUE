@@ -276,14 +276,21 @@ const Charts = {
         const allDates = new Set();
 
         movements.forEach(mov => {
-            // Parse DD/MM/YYYY HH:mm:ss to Date object
+            // Parse DD/MM/YYYY HH:mm:ss or DD/MM/YYYY, HH:mm:ss to Date object
             let movDate;
             if (typeof mov.dataHora === 'string' && mov.dataHora.includes('/')) {
-                const [datePart, timePart] = mov.dataHora.split(' ');
+                // Replace comma with space to handle both formats: "21/11/2025 12:27:58" and "21/11/2025, 12:27:58"
+                const normalizedDateTime = mov.dataHora.replace(',', '');
+                const [datePart, timePart] = normalizedDateTime.split(' ');
                 const [day, month, year] = datePart.split('/');
                 movDate = new Date(`${year}-${month}-${day}T${timePart || '00:00:00'}`);
             } else {
                 movDate = new Date(mov.dataHora);
+            }
+
+            // Skip invalid dates
+            if (isNaN(movDate.getTime())) {
+                return;
             }
 
             if (movDate >= cutoffDate && mov.tipoOperacao === 'Retirada') {
@@ -299,6 +306,23 @@ const Charts = {
                 materialMovements[mov.material][date] += parseInt(mov.quantidade) || 0;
             }
         });
+
+        // Show message if no data available
+        if (allDates.size === 0) {
+            const canvas = document.getElementById('chart-timeline');
+            const container = canvas.parentElement.parentElement;
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-sm text-slate-500 mb-2">
+                        📭 Nenhuma movimentação de retirada encontrada no período selecionado (últimos ${filterPeriod} dias).
+                    </p>
+                    <button onclick="document.getElementById('filter-period').value='30'; Charts.renderMovementTimeline(window.movementsData, window.stockData, 30);" 
+                        class="mt-3 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                        Tentar com 30 dias
+                    </button>
+                </div>`;
+            return;
+        }
 
         const dates = Array.from(allDates).sort((a, b) => {
             const [dA, mA, yA] = a.split('/');
@@ -447,11 +471,18 @@ const Charts = {
     renderEPICompliance(stock) {
         this.destroyChart('epi');
 
+        // Check if element exists before rendering
+        const canvas = document.getElementById('chart-epi');
+        if (!canvas) {
+            console.warn('chart-epi canvas not found, skipping EPI chart');
+            return;
+        }
+
         const epis = stock.filter(i => i.epiAtivo === 'Sim' || i.epiAtivo == 1);
         const epiCritical = epis.filter(i => i.estoqueAtual <= i.estoqueCritico).length;
         const epiOk = epis.length - epiCritical;
 
-        const ctx = document.getElementById('chart-epi').getContext('2d');
+        const ctx = canvas.getContext('2d');
         this.instances.epi = new Chart(ctx, {
             type: 'pie',
             data: {
@@ -477,11 +508,18 @@ const Charts = {
     renderTop5Items(stock) {
         this.destroyChart('top5');
 
+        // Check if element exists before rendering
+        const canvas = document.getElementById('chart-top5');
+        if (!canvas) {
+            console.warn('chart-top5 canvas not found, skipping Top 5 chart');
+            return;
+        }
+
         const sorted = [...stock].sort((a, b) =>
             (parseInt(b.qtdRetiradas) || 0) - (parseInt(a.qtdRetiradas) || 0)
         ).slice(0, 5);
 
-        const ctx = document.getElementById('chart-top5').getContext('2d');
+        const ctx = canvas.getContext('2d');
         this.instances.top5 = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -513,8 +551,7 @@ const Charts = {
     renderAllAnalytics(stock, movements) {
         this.renderStockComparison(stock);
         this.renderMovementTimeline(movements, stock);
-        this.renderEPICompliance(stock);
-        this.renderTop5Items(stock);
+        // Note: EPI and Top5 charts are only on Dashboard, not Analytics
     }
 };
 
@@ -523,8 +560,15 @@ function toggleAllTimelineItems() {
     if (!window.timelineChartInstance) return;
 
     const chart = window.timelineChartInstance;
-    const allHidden = chart.data.datasets.every(dataset => dataset.hidden);
+    const btn = document.getElementById('btn-toggle-all');
 
+    // Check if all datasets are currently hidden
+    const allHidden = chart.data.datasets.every(dataset => {
+        const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(dataset));
+        return meta.hidden === true;
+    });
+
+    // Toggle all datasets
     chart.data.datasets.forEach((dataset, index) => {
         const meta = chart.getDatasetMeta(index);
         meta.hidden = !allHidden;
@@ -532,8 +576,10 @@ function toggleAllTimelineItems() {
 
     chart.update();
 
-    const btn = document.getElementById('btn-toggle-all');
+    // Update button text
     if (btn) {
         btn.textContent = allHidden ? 'Desselecionar Todos' : 'Selecionar Todos';
     }
 }
+
+window.Charts = Charts;

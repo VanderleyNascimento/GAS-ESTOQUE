@@ -5,32 +5,48 @@ let html5QrCode = null;
 
 const Scanner = {
 
-    start() {
+    async start() {
         const modal = document.getElementById('modal-scanner');
         modal.classList.remove('hidden');
 
-        html5QrCode = new Html5Qrcode("reader");
-        const config = {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0
-        };
+        // Show loading state
+        const reader = document.getElementById('reader');
+        reader.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-white"><i class="fa-solid fa-circle-notch fa-spin text-4xl mb-4"></i><p>Iniciando câmera...</p></div>';
 
-        html5QrCode.start(
-            { facingMode: "environment" },
-            config,
-            Scanner.onScanSuccess
-        ).catch(err => {
+        try {
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            };
+
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                Scanner.onScanSuccess
+            );
+        } catch (err) {
             console.error("Scanner error:", err);
-            Components.showToast('Erro ao iniciar câmera. Use o input manual.', 'error');
-        });
+            Components.showToast('Erro ao iniciar câmera. Verifique as permissões.', 'error');
+            reader.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-white"><i class="fa-solid fa-triangle-exclamation text-4xl mb-4 text-red-500"></i><p>Erro ao acessar câmera</p></div>';
+        }
     },
 
     stop() {
-        if (html5QrCode && html5QrCode.isScanning) {
+        if (html5QrCode) {
             html5QrCode.stop()
-                .then(() => html5QrCode.clear())
-                .catch(err => console.error("Stop error:", err));
+                .then(() => {
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                })
+                .catch(err => {
+                    console.error("Stop error:", err);
+                    html5QrCode = null;
+                });
         }
         document.getElementById('modal-scanner').classList.add('hidden');
     },
@@ -40,20 +56,48 @@ const Scanner = {
         Scanner.searchAndOpenItem(decodedText);
     },
 
-    searchAndOpenItem(searchText) {
-        if (!window.stockData) {
-            Components.showToast('Dados não carregados', 'error');
-            return;
+    searchAndOpenItem(text) {
+        const cleanText = text.trim();
+
+        // Tentar buscar por ID primeiro (se for número)
+        if (/^\d+$/.test(cleanText)) {
+            const item = window.stockData.find(i => i.id === parseInt(cleanText));
+            if (item) {
+                // Se estiver na aba inventário, adicionar à contagem
+                if (window.currentTab === 'inventory' && typeof Inventory !== 'undefined') {
+                    Inventory.addItem(item);
+                    return;
+                }
+                // Senão, abrir modal de movimentação
+                Components.showMovementModal(item);
+                return;
+            }
         }
 
+        // Fallback: buscar por nome (compatibilidade com QR codes antigos)
         const item = window.stockData.find(i =>
-            i.material.toLowerCase().trim() === searchText.toLowerCase().trim()
+            i.material.toLowerCase() === cleanText.toLowerCase()
         );
 
         if (item) {
+            // Se estiver na aba inventário, adicionar à contagem
+            if (window.currentTab === 'inventory' && typeof Inventory !== 'undefined') {
+                Inventory.addItem(item);
+                return;
+            }
             Components.showMovementModal(item);
         } else {
-            Components.showToast(`Item "${searchText}" não encontrado`, 'warning');
+            Components.showToast('Item não encontrado', 'error');
         }
     }
 };
+
+// Initialize close button
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.getElementById('scanner-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => Scanner.stop());
+    }
+});
+
+window.Scanner = Scanner;

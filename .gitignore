@@ -1,0 +1,20 @@
+# Arquivos temporários e backups
+*.backup
+*.temp
+*.tmp
+*.ps1
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

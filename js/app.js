@@ -7,6 +7,7 @@ window.currentTab = 'dashboard';
 
 // Initialize app on page load
 window.addEventListener('DOMContentLoaded', async () => {
+    console.log('🔧 DEBUG: app.js loaded and DOMContentLoaded fired');
     console.log('✅ App initialized');
     console.log('🚀 LoggiStock iniciando...');
 
@@ -32,187 +33,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Load data from API
-window.loadData = async function () {
-    try {
-        const [stock, movements] = await Promise.all([
-            API.getStock(),
-            API.getMovements()
-        ]);
-
-        // Normalize data
-        window.stockData = stock.map(item => ({
-            material: item.material || '',
-            estoqueAtual: parseInt(item.estoqueAtual) || 0,
-            estoqueCritico: parseInt(item.estoqueCritico) || 0,
-            qtdRetiradas: parseInt(item.qtdRetiradas) || 0,
-            epiAtivo: item.epiAtivo
-        }));
-
-        window.movementsData = movements
-            .map(m => ({
-                dataHora: m.dataHora,
-                material: m.material,
-                tipoOperacao: m.tipoOperacao,
-                quantidade: parseInt(m.quantidade) || 0,
-                email: m.email
-            }))
-            .reverse();
-
-        // Render UI
-        Components.renderKPIs(window.stockData, window.movementsData);
-        Components.renderActivity(window.movementsData);
-        Components.renderMaterialsTable(window.stockData);
-
-        // Render Charts
-        Charts.renderCriticalItems(window.stockData);
-        Charts.renderStockStatus(window.stockData);
-
-        console.log('✅ Dados carregados:', window.stockData.length, 'itens');
-    } catch (error) {
-        console.error('❌ Erro ao carregar dados:', error);
-        Components.showToast('Erro ao carregar dados', 'error');
-    }
-};
-
-// Tab Switching
-window.switchTab = function (tabName) {
-    // Hide all views
-    document.getElementById('view-dashboard').classList.add('hidden');
-    document.getElementById('view-analytics').classList.add('hidden');
-    document.getElementById('view-materials').classList.add('hidden');
-
-    // Show selected view
-    document.getElementById(`view-${tabName}`).classList.remove('hidden');
-
-    // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-
-    window.currentTab = tabName;
-
-    // Render analytics charts when switching to analytics tab
-    if (tabName === 'analytics' && window.stockData.length > 0) {
-        setTimeout(() => {
-            Charts.renderAllAnalytics(window.stockData, window.movementsData);
-        }, 100);
-    }
-};
-
-// Apply Filters
-window.applyFilters = function () {
-    const status = document.getElementById('filter-status').value;
-    const type = document.getElementById('filter-type').value;
-    const period = parseInt(document.getElementById('filter-period').value);
-
-    let filtered = [...window.stockData];
-
-    // Filter by status
-    if (status === 'critical') {
-        filtered = filtered.filter(i => i.estoqueAtual <= i.estoqueCritico);
-    } else if (status === 'warning') {
-        filtered = filtered.filter(i => i.estoqueAtual > i.estoqueCritico && i.estoqueAtual <= i.estoqueCritico * 1.5);
-    } else if (status === 'ok') {
-        filtered = filtered.filter(i => i.estoqueAtual > i.estoqueCritico * 1.5);
-    }
-
-    // Filter by type
-    if (type === 'epi') {
-        filtered = filtered.filter(i => i.epiAtivo === 'Sim' || i.epiAtivo == 1);
-    } else if (type === 'normal') {
-        filtered = filtered.filter(i => i.epiAtivo !== 'Sim' && i.epiAtivo != 1);
-    }
-
-    // Re-render with filtered data
-    Components.renderMaterialsTable(filtered);
-    Components.showToast(`Filtros aplicados: ${filtered.length} itens`, 'success');
-};
-
-// Setup event listeners
-function setupEventListeners() {
-
-    // Scanner button
-    document.getElementById('btn-scanner').addEventListener('click', () => {
-        Scanner.start();
-    });
-
-    // Scanner close
-    document.getElementById('scanner-close').addEventListener('click', () => {
-        Scanner.stop();
-    });
-
-    // Manual search
-    document.getElementById('manual-search').addEventListener('click', () => {
-        const text = document.getElementById('manual-input').value.trim();
-        if (text) {
-            Scanner.stop();
-            Scanner.searchAndOpenItem(text);
-            document.getElementById('manual-input').value = '';
-        }
-    });
-
-    // Add item button (materials view)
-    document.getElementById('btn-add-item-materials').addEventListener('click', () => {
-        openItemModal();
-    });
-
-    // Close modals
-    document.getElementById('modal-close').addEventListener('click', () => {
-        document.getElementById('modal-item').classList.add('hidden');
-    });
-
-    document.getElementById('movement-close').addEventListener('click', () => {
-        document.getElementById('modal-movement').classList.add('hidden');
-    });
-
-    // Form submit
-    document.getElementById('form-item').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await handleItemSave();
-    });
-
-    // Search materials
-    document.getElementById('search-materials').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const filtered = window.stockData.filter(item =>
-            item.material.toLowerCase().includes(searchTerm)
-        );
-        Components.renderMaterialsTable(filtered);
-    });
-
-    // Close modals on overlay click
-    document.getElementById('modal-item').addEventListener('click', (e) => {
-        if (e.target.id === 'modal-item') {
-            document.getElementById('modal-item').classList.add('hidden');
-        }
-    });
-
-    document.getElementById('modal-movement').addEventListener('click', (e) => {
-        if (e.target.id === 'modal-movement') {
-            document.getElementById('modal-movement').classList.add('hidden');
-        }
-    });
-}
-
-// Open item modal (create/edit)
-function openItemModal(item = null) {
-    const modal = document.getElementById('modal-item');
-    const title = document.getElementById('modal-title');
-    const form = document.getElementById('form-item');
-
-    if (item) {
-        title.textContent = 'Editar Item';
-        document.getElementById('input-name').value = item.material;
-        document.getElementById('input-qty').value = item.estoqueAtual;
-        document.getElementById('input-min').value = item.estoqueCritico;
-        document.getElementById('input-epi').checked = item.epiAtivo === 'Sim' || item.epiAtivo == 1;
-    } else {
-        title.textContent = 'Novo Item';
-        form.reset();
-    }
-
-    modal.classList.remove('hidden');
-}
-
 // Load data from API
 window.loadData = async function () {
     try {
@@ -222,7 +42,8 @@ window.loadData = async function () {
         ]);
 
         // Normalize data
-        window.stockData = stock.map(item => ({
+        window.stockData = (stock || []).map(item => ({
+            id: parseInt(item.id) || null,
             material: item.material || '',
             estoqueAtual: parseInt(item.estoqueAtual) || 0,
             estoqueCritico: parseInt(item.estoqueCritico) || 0,
@@ -230,13 +51,13 @@ window.loadData = async function () {
             epiAtivo: item.epiAtivo
         }));
 
-        window.movementsData = movements
+        window.movementsData = (movements || [])
             .map(m => ({
                 dataHora: m.dataHora,
                 material: m.material,
-                tipoOperacao: m.tipoOperacao,
-                quantidade: parseInt(m.quantidade) || 0,
-                email: m.email
+                tipoOperacao: m.tipo || m.tipoOperacao, // SheetDB retorna 'tipo'
+                quantidade: parseInt(m.quantidade || m.qtd) || 0,
+                email: m.usuario || m.email
             }))
             .reverse();
 
@@ -246,22 +67,47 @@ window.loadData = async function () {
         Components.renderMaterialsTable(window.stockData);
 
         // Render Charts
-        Charts.renderCriticalItems(window.stockData);
-        Charts.renderStockStatus(window.stockData);
+        if (window.Charts) {
+            Charts.renderCriticalItems(window.stockData);
+            Charts.renderStockStatus(window.stockData);
+        }
 
         console.log('✅ Dados carregados:', window.stockData.length, 'itens');
     } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
-        Components.showToast('Erro ao carregar dados', 'error');
+        Components.showToast(error.message || 'Erro ao carregar dados', 'error');
+
+        // Ensure UI is in a usable state even with error
+        window.stockData = window.stockData || [];
+        window.movementsData = window.movementsData || [];
+        Components.renderMaterialsTable(window.stockData);
+    } finally {
+        // Always hide loading screen
+        const loading = document.getElementById('loading');
+        if (loading && !loading.classList.contains('hidden')) {
+            loading.style.opacity = '0';
+            setTimeout(() => loading.classList.add('hidden'), 300);
+        }
     }
 };
 
 // Tab Switching
 window.switchTab = function (tabName) {
+    // Verificar permissões para inventário
+    if (tabName === 'inventory') {
+        const user = getCurrentUser();
+        if (!user || user.cargo !== 'Administrador') {
+            Components.showToast('Acesso negado: apenas Administradores', 'error');
+            return;
+        }
+    }
+
     // Hide all views
     document.getElementById('view-dashboard').classList.add('hidden');
     document.getElementById('view-analytics').classList.add('hidden');
     document.getElementById('view-materials').classList.add('hidden');
+    const inventoryView = document.getElementById('view-inventory');
+    if (inventoryView) inventoryView.classList.add('hidden');
 
     // Show selected view
     document.getElementById(`view-${tabName}`).classList.remove('hidden');
@@ -276,7 +122,19 @@ window.switchTab = function (tabName) {
     if (tabName === 'analytics' && window.stockData.length > 0) {
         setTimeout(() => {
             Charts.renderAllAnalytics(window.stockData, window.movementsData);
+
+            // Fix: Resize charts to prevent distortion when switching tabs
+            setTimeout(() => {
+                if (Charts.instances.comparison) Charts.instances.comparison.resize();
+                if (Charts.instances.timeline) Charts.instances.timeline.resize();
+            }, 150);
         }, 100);
+    }
+
+    // Load inventory when switching to inventory tab
+    if (tabName === 'inventory' && typeof Inventory !== 'undefined') {
+        Inventory.loadHistory();
+        Inventory.renderCurrentItems();
     }
 };
 
@@ -313,9 +171,14 @@ window.applyFilters = function () {
 function setupEventListeners() {
 
     // Scanner button
-    document.getElementById('btn-scanner').addEventListener('click', () => {
-        Scanner.start();
-    });
+    const btnScanner = document.getElementById('btn-scanner');
+    if (btnScanner) {
+        btnScanner.addEventListener('click', () => {
+            console.log('🔘 Scanner button clicked');
+            Scanner.start();
+            document.getElementById('modal-scanner').classList.remove('hidden');
+        });
+    }
 
     // Scanner close
     document.getElementById('scanner-close').addEventListener('click', () => {
@@ -332,15 +195,15 @@ function setupEventListeners() {
         }
     });
 
-    // Add item button (materials view)
-    document.getElementById('btn-add-item-materials').addEventListener('click', () => {
-        openItemModal();
-    });
+    // Add item button (materials view) - REMOVED: usando FAB ao invés
+    // document.getElementById('btn-add-item-materials').addEventListener('click', () => {
+    //     openItemModal();
+    // });
 
-    // Close modals
-    document.getElementById('modal-close').addEventListener('click', () => {
-        document.getElementById('modal-item').classList.add('hidden');
-    });
+    // Close modals - REMOVED: botão de fechar item não tem esse ID
+    // document.getElementById('modal-close').addEventListener('click', () => {
+    //     document.getElementById('modal-item').classList.add('hidden');
+    // });
 
     document.getElementById('movement-close').addEventListener('click', () => {
         document.getElementById('modal-movement').classList.add('hidden');
@@ -352,14 +215,14 @@ function setupEventListeners() {
         await handleItemSave();
     });
 
-    // Search materials
-    document.getElementById('search-materials').addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const filtered = window.stockData.filter(item =>
-            item.material.toLowerCase().includes(searchTerm)
-        );
-        Components.renderMaterialsTable(filtered);
-    });
+    // Search materials - REMOVED: elemento não existe no HTML
+    // document.getElementById('search-materials').addEventListener('input', (e) => {
+    //     const searchTerm = e.target.value.toLowerCase();
+    //     const filtered = window.stockData.filter(item =>
+    //         item.material.toLowerCase().includes(searchTerm)
+    //     );
+    //     Components.renderMaterialsTable(filtered);
+    // });
 
     // Close modals on overlay click
     document.getElementById('modal-item').addEventListener('click', (e) => {
@@ -377,6 +240,7 @@ function setupEventListeners() {
 
 // Open item modal (create/edit)
 function openItemModal(item = null) {
+    console.log('🔘 Open Item Modal called', item ? '(Edit)' : '(New)');
     const modal = document.getElementById('modal-item');
     const title = document.getElementById('modal-title');
     const form = document.getElementById('form-item');
@@ -442,3 +306,16 @@ async function handleItemSave() {
 
 // Movement functions are now handled by Components.js
 // window.openMovementModal and window.handleMovement removed to avoid conflicts
+
+// Search materials
+const searchMaterials = document.getElementById('search-materials');
+if (searchMaterials) {
+    searchMaterials.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filtered = window.stockData.filter(item =>
+            item.material.toLowerCase().includes(searchTerm) ||
+            (item.id && item.id.toString() === searchTerm)
+        );
+        Components.renderMaterialsTable(filtered);
+    });
+}

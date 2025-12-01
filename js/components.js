@@ -147,18 +147,15 @@ const Components = {
                     </td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex items-center justify-center gap-2">
-                            <button onclick="handleMaterialAction('${item.material}', 'move')" class="w-8 h-8 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors" title="Movimentar">
-                                <i class="fa-solid fa-arrows-rotate text-sm"></i>
-                            </button>
-                            <button onclick="openQRModal('${item.material}')" class="w-8 h-8 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors" title="Gerar QR Code">
-                                <i class="fa-solid fa-qrcode text-sm"></i>
+                            <button onclick="openQRModal('${item.material}')" class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors" title="QR Code">
+                                <i class="fa-solid fa-qrcode"></i>
                             </button>
                             ${(() => {
                     const user = window.getCurrentUser ? window.getCurrentUser() : null;
                     const isAdmin = user && user.cargo === 'Administrador';
                     return isAdmin ? `
-                            <button onclick="confirmDelete('${item.material}')" class="w-8 h-8 rounded-lg hover:bg-red-50 text-red-600 transition-colors" title="Excluir Item">
-                                <i class="fa-solid fa-trash text-sm"></i>
+                            <button onclick="confirmDelete('${item.material}')" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors" title="Excluir">
+                                <i class="fa-solid fa-trash"></i>
                             </button>
                             ` : '';
                 })()}
@@ -168,51 +165,6 @@ const Components = {
             `;
         }).join('');
     },
-
-    // Show movement modal
-    showMovementModal(item) {
-        const modal = document.getElementById('modal-movement');
-        const content = document.getElementById('movement-content');
-
-        const isCritical = item.estoqueAtual <= item.estoqueCritico;
-        const isEpi = item.epiAtivo === 'Sim' || item.epiAtivo == 1;
-
-        content.innerHTML = `
-            <div class="mb-6">
-                <div class="flex items-start justify-between mb-3">
-                    <div>
-                        ${isEpi ? '<span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold mb-2 inline-block">EPI Controlado</span>' : ''}
-                        <h4 class="text-lg font-bold text-slate-900">${item.material}</h4>
-                        <p class="text-xs text-slate-500">Mínimo: ${item.estoqueCritico}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs text-slate-500 uppercase font-semibold">Saldo</p>
-                        <p class="text-4xl font-black ${isCritical ? 'text-red-600' : 'text-slate-900'}">${item.estoqueAtual}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-50 rounded-xl p-3 flex items-center justify-between mb-6">
-                <button onclick="adjustQuantity(-1)" class="w-12 h-12 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-600 text-xl font-bold hover:bg-slate-100 active:scale-95">-</button>
-                <input type="number" id="movement-qty" value="1" readonly class="w-20 text-center text-3xl font-bold bg-transparent border-none focus:outline-none">
-                <button onclick="adjustQuantity(1)" class="w-12 h-12 bg-blue-600 rounded-lg shadow-md text-white text-xl font-bold hover:bg-blue-700 active:scale-95">+</button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <button id="btn-withdraw" onclick="handleMovement('${item.material}', 'Retirada', ${item.estoqueAtual})" class="flex flex-col items-center justify-center p-4 rounded-xl bg-red-50 border-2 border-red-100 text-red-600 hover:bg-red-100 active:scale-95 transition-all">
-                    <i class="fa-solid fa-arrow-down text-xl mb-1"></i>
-                    <span class="font-bold text-sm">RETIRAR</span>
-                </button>
-                <button id="btn-restock" onclick="handleMovement('${item.material}', 'Reposicao', ${item.estoqueAtual})" class="flex flex-col items-center justify-center p-4 rounded-xl bg-emerald-50 border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-100 active:scale-95 transition-all">
-                    <i class="fa-solid fa-arrow-up text-xl mb-1"></i>
-                    <span class="font-bold text-sm">REPOR</span>
-                </button>
-            </div>
-        `;
-
-        modal.classList.remove('hidden');
-        modal.querySelector('.bg-white').classList.add('slide-up');
-    }
 };
 
 // Global helper functions
@@ -225,66 +177,11 @@ function adjustQuantity(delta) {
     input.value = val;
 }
 
-async function handleMovement(material, type, currentStock) {
-    const qty = parseInt(document.getElementById('movement-qty').value);
-
-    try {
-        // Identify which button was clicked based on type
-        const btnId = type === 'Retirada' ? 'btn-withdraw' : 'btn-restock';
-        Components.setButtonLoading(btnId, true, 'Processando...');
-
-        let newStock = currentStock;
-        if (type === 'Retirada') {
-            if (currentStock < qty) {
-                Components.showToast('Saldo insuficiente!', 'error');
-                Components.setButtonLoading(btnId, false);
-                return;
-            }
-            newStock -= qty;
-        } else {
-            newStock += qty;
-        }
-
-        // Update stock
-        await API.updateItem(material, { estoqueAtual: newStock });
-
-        // Get current user
-        const user = window.getCurrentUser ? window.getCurrentUser() : null;
-        const userEmail = user ? user.email : 'App Mobile';
-
-        // Create movement record
-        await API.createMovement({
-            material,
-            tipoOperacao: type,
-            quantidade: qty,
-            email: userEmail,
-            observacao: user ? `Usuário: ${user.nome}` : 'Via App'
-        });
-
-        Components.showToast(`${type === 'Retirada' ? 'Retirada' : 'Reposição'} realizada com sucesso!`, 'success');
-        document.getElementById('modal-movement').classList.add('hidden');
-
-        // Reload data
-        if (window.loadData) window.loadData();
-    } catch (error) {
-        Components.showToast('Erro ao processar movimentação', 'error');
-    } finally {
-        const btnId = type === 'Retirada' ? 'btn-withdraw' : 'btn-restock';
-        Components.setButtonLoading(btnId, false);
-    }
-}
-
-function handleMaterialAction(material, action) {
-    const item = window.stockData.find(i => i.material === material);
-    if (!item) return;
-
-    if (action === 'move') {
-        Components.showMovementModal(item);
-    }
-}
+// handleMovement removed as it's no longer used
+// handleMaterialAction removed as it's no longer used
 
 async function confirmDelete(material) {
-    if (!confirm(`Tem certeza que deseja excluir o item "${material}"? Esta ação não pode ser desfeita.`)) {
+    if (!confirm(`Tem certeza que deseja excluir o item "${material}"?\nEsta ação não pode ser desfeita.`)) {
         return;
     }
 
@@ -301,6 +198,7 @@ async function confirmDelete(material) {
 
 // Report Manager
 Components.openReportModal = function () {
+    console.log('🔘 Open Report Modal called');
     document.getElementById('modal-report').classList.remove('hidden');
 };
 
@@ -335,7 +233,7 @@ Components.generateReport = function () {
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
-        <html>
+                < html >
         <head>
             <title>Relatório de Compras - ${date}</title>
             <style>
@@ -392,13 +290,11 @@ Components.generateReport = function () {
                 window.onload = function() { window.print(); }
             </script>
         </body>
-        </html>
+        </html >
     `);
     printWindow.document.close();
 };
 
 // Expose functions to window for HTML onclick access
 window.adjustQuantity = adjustQuantity;
-window.handleMovement = handleMovement;
-window.handleMaterialAction = handleMaterialAction;
 window.confirmDelete = confirmDelete;

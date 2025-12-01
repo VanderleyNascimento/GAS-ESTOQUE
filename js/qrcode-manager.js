@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <!-- Modal: QR Code Generator -->
         <div id="modal-qr"
             class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-            <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-100">
-                <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+            <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl transform transition-all scale-100 max-h-[90vh] overflow-y-auto">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
                     <h3 class="text-xl font-bold text-slate-900">
                         <i class="fa-solid fa-qrcode mr-2 text-blue-600"></i>QR Code
                     </h3>
@@ -17,11 +17,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-5 space-y-4">
                     <!-- Item Info -->
-                    <div class="bg-slate-50 p-4 rounded-lg">
-                        <h4 id="qr-item-name" class="text-lg font-bold text-slate-900 mb-2"></h4>
-                        <div class="grid grid-cols-3 gap-2 text-sm">
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <h4 id="qr-item-name" class="text-base font-bold text-slate-900 mb-2 truncate"></h4>
+                        <div class="grid grid-cols-3 gap-2 text-xs">
                             <div>
                                 <span class="text-slate-500">Estoque:</span>
                                 <span id="qr-item-stock" class="font-semibold text-slate-900"></span>
@@ -38,15 +38,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
 
                     <!-- QR Code Display -->
-                    <div class="flex justify-center bg-white p-4 rounded-lg border-2 border-slate-200">
+                    <div class="flex justify-center bg-white p-2 rounded-lg border-2 border-slate-200">
                         <div id="qr-code-canvas"></div>
                     </div>
 
                     <!-- Print Layout Selection -->
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Layout de Impressão</label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Layout de Impressão</label>
                         <select id="qr-print-layout"
-                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="thermal">Impressora Térmica (58mm)</option>
                             <option value="a4">Papel A4 (6 códigos)</option>
                         </select>
@@ -55,16 +55,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     <!-- Action Buttons -->
                     <div class="grid grid-cols-2 gap-3">
                         <button onclick="printQRCode()"
-                            class="py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition-all">
+                            class="py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition-all text-sm">
                             <i class="fa-solid fa-print mr-2"></i>Imprimir
                         </button>
                         <button onclick="downloadQRCode()"
-                            class="py-2.5 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 active:scale-95 transition-all">
+                            class="py-2.5 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 active:scale-95 transition-all text-sm">
                             <i class="fa-solid fa-download mr-2"></i>Baixar
                         </button>
                     </div>
                     <button onclick="shareQRWhatsApp()"
-                        class="w-full py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 active:scale-95 transition-all">
+                        class="w-full py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 active:scale-95 transition-all text-sm">
                         <i class="fa-brands fa-whatsapp mr-2"></i>Compartilhar no WhatsApp
                     </button>
                 </div>
@@ -102,24 +102,29 @@ const QRCodeManager = {
         document.getElementById('qr-code-canvas').innerHTML = '';
 
         // Generate new QR code
-        this.generateQRCode(itemName);
+        this.generateQRCode(item);
 
         // Show modal
         document.getElementById('modal-qr').classList.remove('hidden');
     },
 
     // Generate QR Code
-    generateQRCode: function (itemName) {
+    generateQRCode: function (item) {
         const canvas = document.getElementById('qr-code-canvas');
 
         // Clear previous QR
         canvas.innerHTML = '';
 
+        // Usar ID se disponível, senão usar nome (fallback)
+        // Se item for string (nome), usar como está
+        const qrData = (typeof item === 'object' && item.id) ? item.id.toString() :
+            (typeof item === 'object' ? item.material : item);
+
         // Generate QR code using QRCode.js
         this.currentQRCode = new QRCode(canvas, {
-            text: itemName,
-            width: 256,
-            height: 256,
+            text: qrData,
+            width: 200,
+            height: 200,
             colorDark: "#000000",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
