@@ -3,6 +3,7 @@
 
 const ConfirmModal = {
     modal: null,
+    backdropClickHandler: null,
 
     // Initialize modal
     init() {
@@ -34,13 +35,6 @@ const ConfirmModal = {
                 </div>
             `;
             document.body.appendChild(this.modal);
-
-            // Click outside to close
-            this.modal.addEventListener('click', (e) => {
-                if (e.target === this.modal) {
-                    this.hide();
-                }
-            });
         }
     },
 
@@ -57,16 +51,40 @@ const ConfirmModal = {
                 type = 'warning' // warning, danger, info, success
             } = options;
 
+            // Get DOM elements
+            const titleEl = document.getElementById('confirm-title');
+            const messageEl = document.getElementById('confirm-message');
+            const okBtn = document.getElementById('confirm-ok');
+            const cancelBtn = document.getElementById('confirm-cancel');
+            const icon = document.getElementById('confirm-icon');
+
+            if (!titleEl || !messageEl || !okBtn || !cancelBtn || !icon) {
+                console.error('❌ Modal elements not found');
+                resolve(false);
+                return;
+            }
+
             // Set content
-            document.getElementById('confirm-title').textContent = title;
-            document.getElementById('confirm-message').textContent = message;
-            document.getElementById('confirm-ok').textContent = confirmText;
-            document.getElementById('confirm-cancel').textContent = cancelText;
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            okBtn.textContent = confirmText;
+            cancelBtn.textContent = cancelText;
 
             // Set colors based on type
-            const icon = document.getElementById('confirm-icon');
-            const okBtn = document.getElementById('confirm-ok');
-            const iconElement = icon.querySelector('i');
+            let iconElement = icon.querySelector('i');
+
+            // If icon element doesn't exist, recreate it
+            if (!iconElement) {
+
+                icon.innerHTML = '<i class="fa-solid text-xl"></i>';
+                iconElement = icon.querySelector('i');
+
+                if (!iconElement) {
+                    console.error('❌ Failed to create icon element');
+                    resolve(false);
+                    return;
+                }
+            }
 
             if (type === 'danger') {
                 icon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-red-100';
@@ -100,22 +118,39 @@ const ConfirmModal = {
                 resolve(false);
             };
 
-            const cleanup = () => {
-                this.hide();
-                document.getElementById('confirm-ok').removeEventListener('click', handleOk);
-                document.getElementById('confirm-cancel').removeEventListener('click', handleCancel);
-            };
-
-            document.getElementById('confirm-ok').addEventListener('click', handleOk);
-            document.getElementById('confirm-cancel').addEventListener('click', handleCancel);
-
-            // ESC key to cancel
             const handleEsc = (e) => {
                 if (e.key === 'Escape') {
                     handleCancel();
-                    document.removeEventListener('keydown', handleEsc);
                 }
             };
+
+            const cleanup = () => {
+                this.hide();
+
+                // Remove event listeners
+                if (okBtn) okBtn.removeEventListener('click', handleOk);
+                if (cancelBtn) cancelBtn.removeEventListener('click', handleCancel);
+
+                // Remove backdrop click handler
+                if (this.backdropClickHandler) {
+                    this.modal.removeEventListener('click', this.backdropClickHandler);
+                    this.backdropClickHandler = null;
+                }
+
+                // Remove ESC handler
+                document.removeEventListener('keydown', handleEsc);
+            };
+
+            // Backdrop click handler
+            this.backdropClickHandler = (e) => {
+                if (e.target === this.modal) {
+                    handleCancel();
+                }
+            };
+
+            this.modal.addEventListener('click', this.backdropClickHandler);
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
             document.addEventListener('keydown', handleEsc);
         });
     },

@@ -7,9 +7,9 @@ window.currentTab = 'dashboard';
 
 // Initialize app on page load
 window.addEventListener('DOMContentLoaded', async () => {
-    console.log('🔧 DEBUG: app.js loaded and DOMContentLoaded fired');
-    console.log('✅ App initialized');
-    console.log('🚀 LoggiStock iniciando...');
+
+
+
 
     // Display user info
     const user = getCurrentUser();
@@ -42,7 +42,7 @@ window.loadData = async function () {
 
         // DEBUG: Inspect raw data
         if (stock && stock.length > 0) {
-            console.log('🔍 DEBUG: Raw Keys:', Object.keys(stock[0]));
+
             const rawItem = stock.find(i => i.material && i.material.includes('Bota 20'));
             if (rawItem) console.log('🔍 DEBUG: Raw Item:', JSON.stringify(rawItem));
         }
@@ -77,7 +77,7 @@ window.loadData = async function () {
             Charts.renderStockStatus(window.stockData);
         }
 
-        console.log('✅ Dados carregados:', window.stockData.length, 'itens');
+
     } catch (error) {
         console.error('❌ Erro ao carregar dados:', error);
         Components.showToast(error.message || 'Erro ao carregar dados', 'error');
@@ -189,7 +189,7 @@ function setupEventListeners() {
     const btnScanner = document.getElementById('btn-scanner');
     if (btnScanner) {
         btnScanner.addEventListener('click', () => {
-            console.log('🔘 Scanner button clicked');
+
             Scanner.start();
             document.getElementById('modal-scanner').classList.remove('hidden');
         });
@@ -236,7 +236,7 @@ function setupEventListeners() {
 
 // Open item modal (create/edit)
 function openItemModal(item = null) {
-    console.log('🔘 Open Item Modal called', item ? '(Edit)' : '(New)');
+
     const modal = document.getElementById('modal-item');
     const title = document.getElementById('modal-title');
     const form = document.getElementById('form-item');

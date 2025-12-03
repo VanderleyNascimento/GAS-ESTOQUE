@@ -13,7 +13,7 @@ async function sha256(message) {
 // Register new user (ALWAYS INACTIVE by default)
 async function registerUser(nome, email, password) {
     try {
-        console.log('📝 Registrando novo usuário...');
+
 
         // Check if email already exists
         const { data: existingUsers, error: checkError } = await window.supabaseClient
@@ -45,7 +45,7 @@ async function registerUser(nome, email, password) {
 
         if (insertError) throw insertError;
 
-        console.log('✅ Usuário criado (DESATIVADO - aguardando aprovação)');
+
         return true;
 
     } catch (error) {
@@ -57,7 +57,7 @@ async function registerUser(nome, email, password) {
 // Login function
 async function login(email, password) {
     try {
-        console.log('🔐 Tentando login:', email);
+
 
         // Hash password
         const hashedPassword = await sha256(password);
@@ -92,7 +92,7 @@ async function login(email, password) {
 
         localStorage.setItem('loggistock_user', JSON.stringify(session));
 
-        console.log('✅ Login bem-sucedido!');
+
         window.location.href = 'index.html';
 
     } catch (error) {
@@ -241,7 +241,7 @@ if (window.location.pathname.includes('index.html') || window.location.pathname 
             if (document.getElementById('user-role')) {
                 document.getElementById('user-role').textContent = user.cargo;
             }
-            console.log('✅ Usuário logado:', user.nome, `(${user.cargo})`);
+
         }
     });
 }
@@ -254,4 +254,4 @@ window.registerUser = registerUser;
 window.isAdmin = isAdmin;
 window.checkAuth = checkAuth;
 
-console.log('🔐 Auth Supabase carregado');
+

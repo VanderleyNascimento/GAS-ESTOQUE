@@ -199,25 +199,25 @@ function adjustQuantity(delta) {
 // handleMaterialAction removed as it's no longer used
 
 async function confirmDelete(id, material) {
-    console.log(`🗑️ confirmDelete called for ID: ${id}, Material: ${material}`);
+
     const confirmed = await ConfirmModal.confirmDelete(material);
     if (!confirmed) {
-        console.log('❌ Deletion cancelled by user');
+
         return;
     }
 
     try {
         Components.showToast('Excluindo item...', 'info');
-        console.log('🚀 Calling API.deleteItem...');
+
         // Pass material as fallback
         await API.deleteItem(id ? parseInt(id) : material, material);
-        console.log('✅ API.deleteItem returned success');
+
         Components.showToast('Item excluído com sucesso!', 'success');
     } catch (error) {
         console.error('❌ Error in confirmDelete:', error);
         Components.showToast('Erro ao excluir item.', 'error');
     } finally {
-        console.log('🔄 Removendo item da lista imediatamente (optimistic update)...');
+
         if (window.API && window.API.cache) window.API.cache.clear(); // Force clear
 
         // Remove item from local data immediately for better UX
@@ -226,21 +226,21 @@ async function confirmDelete(id, material) {
             window.stockData.splice(index, 1);
             Components.renderMaterialsTable(window.stockData);
             Components.renderKPIs(window.stockData, window.movementsData);
-            console.log('✅ Item removido da interface');
+
         }
 
         // Reload after 1 second to verify deletion (cache is now disabled on SheetDB)
         setTimeout(async () => {
-            console.log('🔄 Verificando estado real do banco após 1s...');
+
             if (window.loadData) {
                 await window.loadData();
                 // Check if item came back (duplicate)
                 const itemStillExists = window.stockData.find(i => i.id === parseInt(id) || i.material === material);
                 if (itemStillExists) {
                     Components.showToast('⚠️ Item reapareceu! Há duplicatas no banco. Use API.removeDuplicates() no console.', 'warning');
-                    console.warn('⚠️ Item ainda existe após delete. Prováveis duplicatas:', itemStillExists);
+
                 } else {
-                    console.log('✅ Exclusão confirmada - item não existe mais no banco');
+
                 }
             }
         }, 1000);
@@ -374,7 +374,7 @@ window.handleMovement = handleMovement;
 
 // Report Manager
 Components.openReportModal = function () {
-    console.log('🔘 Open Report Modal called');
+
     document.getElementById('modal-report').classList.remove('hidden');
 };
 
