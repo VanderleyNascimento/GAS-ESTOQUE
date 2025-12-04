@@ -10,7 +10,7 @@
 ![Security](https://img.shields.io/badge/security-SHA--256-orange.svg)
 ![Database](https://img.shields.io/badge/database-Supabase-green.svg)
 
-[🚀 Demo](https://vanderleynascimento.github.io/GAS-ESTOQUE/login.html) • [📖 Docs](#-índice) • [🐛 Issues](https://github.com/VanderleyNascimento/GAS-ESTOQUE/issues)
+[🚀 Demo](https://loggi-stock.vercel.app/) • [📖 Docs](#-índice) • [🐛 Issues](https://github.com/VanderleyNascimento/GAS-ESTOQUE/issues)
 
 </div>
 
@@ -51,7 +51,7 @@ O **Loggi Stock** é um sistema de gestão de estoque desenvolvido para otimizar
 
 ## 📸 Preview
 
-> **Nota:** Screenshots serão adicionados em breve. Acesse a [demo ao vivo](https://vanderleynascimento.github.io/GAS-ESTOQUE/login.html) para ver o sistema em ação!
+> **Nota:** Screenshots serão adicionados em breve. Acesse a [demo ao vivo](https://loggi-stock.vercel.app/) para ver o sistema em ação!
 
 ---
 
